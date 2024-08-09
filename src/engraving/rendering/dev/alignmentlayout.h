@@ -36,13 +36,14 @@ namespace mu::engraving::rendering::dev {
 class AlignmentLayout
 {
 public:
-    static void alignItems(const std::vector<EngravingItem*>& elements, const System* system);
+    static void alignItemsWithTheirSnappingChain(const std::vector<EngravingItem*>& elements, const System* system);
     static void alignStaffCenteredItems(const std::vector<EngravingItem*>& elements, const System* system);
+    static void alignItemsGroup(const std::vector<EngravingItem*>& elements, const System* system);
 
 private:
-    static void moveItemToY(EngravingItem* item, double y, const System* system, std::set<EngravingItem*>& alignedItems);
+    static void moveItemToY(EngravingItem* item, double y, const System* system);
     static double yOpticalCenter(const EngravingItem* item);
-    static void scanConnectedItems(EngravingItem* item, std::function<void(EngravingItem*)> func);
+    static void scanConnectedItems(EngravingItem* item, const System* system, std::function<void(EngravingItem*)> func);
     static double computeAverageY(const std::vector<double>& vecOfY);
 };
 } // namespace mu::engraving::rendering::dev

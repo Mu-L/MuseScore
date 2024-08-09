@@ -85,8 +85,7 @@ public:
     void setVelocity(int v) { m_velocity = v; }
     int velocity() const;
     DynamicRange dynRange() const { return m_dynRange; }
-    void setDynRange(DynamicRange t) { m_dynRange = t; }
-    void undoSetDynRange(DynamicRange t);
+    void setDynRange(DynamicRange t);
 
     int changeInVelocity() const;
     void setChangeInVelocity(int val);
@@ -111,6 +110,9 @@ public:
     bool hasCustomText() const { return dynamicText(m_dynamicType) != xmlText(); }
 
     Expression* snappedExpression() const;
+    HairpinSegment* findSnapBeforeHairpinAcrossSystemBreak() const;
+
+    void undoMoveSegment(Segment* newSeg, Fraction tickDiff);
 
     bool playDynamic() const { return m_playDynamic; }
     void setPlayDynamic(bool v) { m_playDynamic = v; }
@@ -125,7 +127,7 @@ public:
     void setAnchorToEndOfPrevious(bool v) { m_anchorToEndOfPrevious = v; }
     void checkMeasureBoundariesAndMoveIfNeed();
 
-    bool hasVoiceApplicationProperties() const override { return true; }
+    bool hasVoiceAssignmentProperties() const override { return true; }
 
 private:
 

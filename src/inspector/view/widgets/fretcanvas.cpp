@@ -130,7 +130,7 @@ void FretCanvas::draw(QPainter* painter)
             double insetX = 2 * lw1;
             double insetY = fret == 1 ? lw2 + lw1 : insetX;
             double startX = startString * stringDist + insetX;
-            double endX = (endString == -1 ? x2 : stringDist * endString) - insetX;
+            double endX = (endString == -1 ? x2 : stringDist * (endString - 1)) - insetX;
             double shoulderXoffset = 0.2 * (endX - startX);
             double startEndY = (fret - 1) * fretDist - insetY;
             double shoulderY = startEndY - 0.5 * fretDist;
@@ -198,7 +198,7 @@ void FretCanvas::draw(QPainter* painter)
         const double padding = 0.2 * _spatium;
         muse::draw::FontMetrics fontMetrics(muse::draw::Font::fromQFont(font, muse::draw::Font::Type::Text));
         double fontHeight = fontMetrics.capHeight();
-        for (int i = 0; i < m_diagram->fingering().size(); ++i) {
+        for (size_t i = 0; i < m_diagram->fingering().size(); ++i) {
             int finger = m_diagram->fingering()[i];
             if (finger == 0) {
                 continue;
