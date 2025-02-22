@@ -102,6 +102,7 @@ using Stem = mu::engraving::Stem;
 using Hook = mu::engraving::Hook;
 using Fraction = mu::engraving::Fraction;
 using NoteInputMethod = mu::engraving::NoteEntryMethod;
+using NoteInputParams = mu::engraving::NoteInputParams;
 using AccidentalType = mu::engraving::AccidentalType;
 using OttavaType = mu::engraving::OttavaType;
 using HairpinType = mu::engraving::HairpinType;
@@ -153,14 +154,14 @@ using VoiceAssignment = mu::engraving::VoiceAssignment;
 
 static const muse::String COMMON_GENRE_ID("common");
 
-enum class DragMode
+enum class DragMode : unsigned char
 {
     BothXY = 0,
     OnlyX,
     OnlyY
 };
 
-enum class MoveDirection
+enum class MoveDirection : unsigned char
 {
     Undefined = 0,
     Left,
@@ -169,7 +170,7 @@ enum class MoveDirection
     Down
 };
 
-enum class MoveSelectionType
+enum class MoveSelectionType : unsigned char
 {
     Undefined = 0,
     EngravingItem,
@@ -181,7 +182,7 @@ enum class MoveSelectionType
     String // TAB Staff
 };
 
-enum class ExpandSelectionMode
+enum class ExpandSelectionMode : unsigned char
 {
     BeginSystem,
     EndSystem,
@@ -189,30 +190,31 @@ enum class ExpandSelectionMode
     EndScore,
 };
 
-enum class AddRemoveSystemLockType
+enum class AddRemoveSystemLockType : signed char
 {
     AfterEachSystem = -1,
     None = 0,
     MeasuresInterval
 };
 
-enum class BoxType
+enum class BoxType : unsigned char
 {
     Unknown,
     Vertical,
     Horizontal,
     Measure,
-    Text
+    Text,
+    Fret
 };
 
-enum class AddBoxesTarget {
+enum class AddBoxesTarget : unsigned char {
     AfterSelection,
     BeforeSelection,
     AtStartOfScore,
     AtEndOfScore
 };
 
-enum class NoteName
+enum class NoteName : unsigned char
 {
     C = 0,
     D,
@@ -226,14 +228,14 @@ enum class NoteName
 using NoteVal = mu::engraving::NoteVal;
 using NoteValList = mu::engraving::NoteValList;
 
-enum class NoteAddingMode
+enum class NoteAddingMode : unsigned char
 {
     CurrentChord,
     NextChord,
     InsertChord
 };
 
-enum class PastingType {
+enum class PastingType : unsigned char {
     Default,
     Half,
     Double,
@@ -242,14 +244,14 @@ enum class PastingType {
 
 using NoteInputState = mu::engraving::InputState;
 
-enum class NoteFilter
+enum class NoteFilter : unsigned char
 {
     All,
     WithTie,
     WithSlur
 };
 
-enum class ZoomType {
+enum class ZoomType : unsigned char {
     Percentage,
     PageWidth,
     WholePage,
@@ -489,7 +491,7 @@ struct LoopBoundaries
     }
 };
 
-enum class ScoreConfigType
+enum class ScoreConfigType : unsigned char
 {
     ShowInvisibleElements,
     ShowUnprintableElements,
@@ -535,7 +537,7 @@ struct MeasureBeat
     int maxBeatIndex = 0;
 };
 
-enum class BracketsType
+enum class BracketsType : unsigned char
 {
     Brackets,
     Braces,
@@ -614,6 +616,12 @@ struct StringTuningsInfo
 };
 
 using InstrumentStringTuningsMap = std::map<std::string, std::vector<StringTuningsInfo> >;
+
+enum class PercussionPanelAutoShowMode {
+    UNPITCHED_STAFF,
+    UNPITCHED_STAFF_NOTE_INPUT,
+    NEVER,
+};
 }
 
 #endif // MU_NOTATION_NOTATIONTYPES_H

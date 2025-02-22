@@ -733,6 +733,13 @@ const UiActionList NotationUiActions::m_actions = {
              TranslatableString("action", "Insert text frame"),
              IconCode::Code::TEXT_FRAME
              ),
+    UiAction("insert-fretframe",
+             mu::context::UiCtxProjectOpened,
+             mu::context::CTX_NOTATION_OPENED,
+             TranslatableString("action", "Insert &fretboard diagram legend"),
+             TranslatableString("action", "Insert &fretboard diagram legend"),
+             IconCode::Code::FRET_FRAME
+             ),
     UiAction("append-hbox",
              mu::context::UiCtxProjectOpened,
              mu::context::CTX_NOTATION_OPENED,
@@ -1219,6 +1226,12 @@ const UiActionList NotationUiActions::m_actions = {
              TranslatableString("action", "Ottava 8va &bassa"),
              TranslatableString("action", "Add ottava 8va bassa")
              ),
+    UiAction("add-dynamic",
+             mu::context::UiCtxProjectOpened,
+             mu::context::CTX_ANY,
+             TranslatableString("action", "&Dynamic"),
+             TranslatableString("action", "Add dynamic")
+             ),
     UiAction("add-hairpin",
              mu::context::UiCtxProjectOpened,
              mu::context::CTX_ANY,
@@ -1233,9 +1246,10 @@ const UiActionList NotationUiActions::m_actions = {
              ),
     UiAction("add-noteline",
              mu::context::UiCtxProjectOpened,
-             mu::context::CTX_NOTATION_OPENED,
-             TranslatableString("action", "&Note anchored line"),
-             TranslatableString("action", "Add note anchored line")
+             mu::context::CTX_ANY,
+             TranslatableString("action", "&Note-anchored line"),
+             TranslatableString("action", "Add note-anchored line"),
+             IconCode::Code::NOTE_ANCHORED_LINE
              ),
     UiAction("chord-tie",
              mu::context::UiCtxProjectOpened,
@@ -1294,12 +1308,6 @@ const UiActionList NotationUiActions::m_actions = {
              mu::context::CTX_ANY,
              TranslatableString("action", "St&aff text"),
              TranslatableString("action", "Add text: staff text")
-             ),
-    UiAction("dynamics",
-             mu::context::UiCtxProjectOpened,
-             mu::context::CTX_ANY,
-             TranslatableString("action", "&Dynamic"),
-             TranslatableString("action", "Add text: dynamic")
              ),
     UiAction("expression-text",
              mu::context::UiCtxProjectOpened,
@@ -1642,6 +1650,11 @@ const UiActionList NotationUiActions::m_actions = {
              TranslatableString("action", "Flip direction"),
              IconCode::Code::NOTE_FLIP
              ),
+    UiAction("flip-horizontally",
+             mu::context::UiCtxProjectOpened,
+             mu::context::CTX_ANY,
+             TranslatableString("action", "Flip horizontally"),
+             TranslatableString("action", "Flip horizontally")),
     UiAction(TOGGLE_CONCERT_PITCH_CODE,
              mu::context::UiCtxProjectOpened,
              mu::context::CTX_NOTATION_OPENED,
@@ -2503,13 +2516,6 @@ const UiActionList NotationUiActions::m_actions = {
              TranslatableString("action", "Slight bend"),
              TranslatableString("action", "Slight bend"),
              IconCode::Code::GUITAR_SLIGHT_BEND
-             ),
-    UiAction("add-noteline",
-             mu::context::UiCtxProjectFocused,
-             mu::context::CTX_ANY,
-             TranslatableString("action", "Note-anchored line"),
-             TranslatableString("action", "Note-anchored line"),
-             IconCode::Code::NOTE_ANCHORED_LINE
              ),
 };
 

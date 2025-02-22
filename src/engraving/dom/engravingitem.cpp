@@ -450,29 +450,36 @@ staff_idx_t EngravingItem::effectiveStaffIdx() const
         return muse::nidx;
     }
 
-    const Staff* originalStaff = m_score->staff(originalStaffIdx);
-    if (originalStaff->show() && system->staff(originalStaffIdx)->show()) {
+    const std::vector<Staff*>& systemObjectStaves = m_score->systemObjectStaves(); // CAUTION: may not be ordered
+    if (originalStaffIdx > 0) {
+        staff_idx_t prevSysObjStaffIdx = 0;
+        for (Staff* sysObjStaff : systemObjectStaves) {
+            staff_idx_t sysObjStaffIdx = sysObjStaff->idx();
+            if (sysObjStaffIdx > prevSysObjStaffIdx && sysObjStaffIdx < originalStaffIdx) {
+                prevSysObjStaffIdx = sysObjStaffIdx;
+            }
+        }
+
+        bool omitObject = true;
+        for (staff_idx_t stfIdx = prevSysObjStaffIdx; stfIdx < originalStaffIdx; ++stfIdx) {
+            if (m_score->staff(stfIdx)->show() && system->staff(stfIdx)->show()) {
+                omitObject = false;
+                break;
+            }
+        }
+
+        if (omitObject) {
+            // If all staves between this and the previous system object are hidden
+            // we omit this object because it will be replaced by the upper one
+            return muse::nidx;
+        }
+    }
+
+    if (m_score->staff(originalStaffIdx)->show() && system->staff(originalStaffIdx)->show()) {
         return originalStaffIdx;
     }
 
-    staff_idx_t nextSystemObjectStaff = muse::nidx;
-    const std::vector<Staff*>& systemObjectStaves = m_score->systemObjectStaves();
-    for (size_t i = 1; i < systemObjectStaves.size(); ++i) {
-        staff_idx_t idx = systemObjectStaves[i]->idx();
-        if (idx > originalStaffIdx) {
-            nextSystemObjectStaff = idx;
-            break;
-        }
-    }
-
-    staff_idx_t nstaves = m_score->nstaves();
-    for (staff_idx_t staffIdx = originalStaffIdx + 1; staffIdx < nstaves && staffIdx < nextSystemObjectStaff; ++staffIdx) {
-        if (m_score->staff(staffIdx)->show() && system->staff(staffIdx)->show()) {
-            return staffIdx;
-        }
-    }
-
-    return muse::nidx;
+    return system->nextVisibleStaff(originalStaffIdx);
 }
 
 bool EngravingItem::isTopSystemObject() const
@@ -660,6 +667,8 @@ PointF EngravingItem::pagePos() const
         } else if (explicitParent()->isSystem()) {
             system = toSystem(explicitParent());
         } else if (explicitParent()->isFretDiagram()) {
+            return p + parentItem()->pagePos();
+        } else if (explicitParent()->isFBox()) {
             return p + parentItem()->pagePos();
         } else {
             ASSERT_X(String(u"this %1 parent %2\n").arg(String::fromAscii(typeName()), String::fromAscii(explicitParent()->typeName())));
@@ -1601,8 +1610,9 @@ bool EngravingItem::isPlayable() const
     switch (type()) {
     case ElementType::NOTE:
     case ElementType::CHORD:
-    case ElementType::HARMONY:
         return true;
+    case ElementType::HARMONY:
+        return explicitParent() && explicitParent()->isSegment();
     default:
         return false;
     }

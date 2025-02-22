@@ -23,7 +23,6 @@
 #include <map>
 #include <set>
 
-#include "dom/volta.h"
 #include "infrastructure/messagebox.h"
 
 #include "accidental.h"
@@ -57,6 +56,7 @@
 #include "layoutbreak.h"
 #include "linkedobjects.h"
 #include "lyrics.h"
+#include "marker.h"
 #include "masterscore.h"
 #include "measure.h"
 #include "measurerepeat.h"
@@ -94,6 +94,7 @@
 #include "tupletmap.h"
 #include "undo.h"
 #include "utils.h"
+#include "volta.h"
 
 #include "log.h"
 
@@ -662,7 +663,10 @@ Note* Score::addNoteToTiedChord(Chord* chord, const NoteVal& noteVal, bool force
 Slur* Score::addSlur(ChordRest* firstChordRest, ChordRest* secondChordRest, const Slur* slurTemplate)
 {
     if (!secondChordRest) {
-        secondChordRest = nextChordRest(firstChordRest);
+        ChordRestNavigateOptions options;
+        options.disableOverRepeats = true;
+        secondChordRest = nextChordRest(firstChordRest, options);
+
         if (!secondChordRest) {
             secondChordRest = firstChordRest;
         }
@@ -756,6 +760,15 @@ TextBase* Score::addText(TextStyleType type, EngravingItem* destinationElement)
             break;
         }
         textBox = Factory::createSystemText(dummy()->segment(), TextStyleType::SYSTEM);
+        chordRest->undoAddAnnotation(textBox);
+        break;
+    }
+    case TextStyleType::DYNAMICS: {
+        ChordRest* chordRest = chordOrRest(destinationElement);
+        if (!chordRest) {
+            break;
+        }
+        textBox = Factory::createDynamic(dummy()->segment());
         chordRest->undoAddAnnotation(textBox);
         break;
     }
@@ -949,15 +962,6 @@ TextBase* Score::addText(TextStyleType type, EngravingItem* destinationElement)
 
         textBox = tempoText;
         undoAddElement(textBox);
-        break;
-    }
-    case TextStyleType::DYNAMICS: {
-        ChordRest* chordRest = chordOrRest(destinationElement);
-        if (!chordRest) {
-            break;
-        }
-        textBox = Factory::createDynamic(dummy()->segment());
-        chordRest->undoAddAnnotation(textBox);
         break;
     }
     case TextStyleType::HARP_PEDAL_DIAGRAM:
@@ -2103,7 +2107,7 @@ void Score::cmdToggleLaissezVib()
         return;
     }
 
-    startCmd(TranslatableString("undoableAction", "Toggle laissez vib"));
+    startCmd(TranslatableString("undoableAction", "Toggle laissez vibrer"));
 
     for (Note* note: noteList) {
         if (LaissezVib* lv = note->laissezVib()) {
@@ -2339,15 +2343,15 @@ void Score::cmdFlip()
             flipOnce(artic, [artic]() {
                 ArticulationAnchor articAnchor = artic->anchor();
                 switch (articAnchor) {
-                case ArticulationAnchor::TOP:
-                    articAnchor = ArticulationAnchor::BOTTOM;
-                    break;
-                case ArticulationAnchor::BOTTOM:
-                    articAnchor = ArticulationAnchor::TOP;
-                    break;
-                case ArticulationAnchor::AUTO:
-                    articAnchor = artic->up() ? ArticulationAnchor::BOTTOM : ArticulationAnchor::TOP;
-                    break;
+                    case ArticulationAnchor::TOP:
+                        articAnchor = ArticulationAnchor::BOTTOM;
+                        break;
+                    case ArticulationAnchor::BOTTOM:
+                        articAnchor = ArticulationAnchor::TOP;
+                        break;
+                    case ArticulationAnchor::AUTO:
+                        articAnchor = artic->up() ? ArticulationAnchor::BOTTOM : ArticulationAnchor::TOP;
+                        break;
                 }
                 PropertyFlags pf = artic->propertyFlags(Pid::ARTICULATION_ANCHOR);
                 if (pf == PropertyFlags::STYLED) {
@@ -2449,6 +2453,38 @@ void Score::cmdFlip()
                     off.ry() = newDefaultY - oldY;
                     ee->undoChangeProperty(Pid::OFFSET, off);
                     ee->setOffsetChanged(false);
+                }
+            });
+        }
+    }
+}
+
+void Score::cmdFlipHorizontally()
+{
+    const std::vector<EngravingItem*>& el = selection().elements();
+    if (el.empty()) {
+        MScore::setError(MsError::NO_FLIPPABLE_SELECTED);
+        return;
+    }
+
+    std::set<const EngravingItem*> alreadyFlippedElements;
+    auto flipOnce = [&alreadyFlippedElements](const EngravingItem* element, std::function<void()> flipFunction) -> void {
+        if (alreadyFlippedElements.insert(element).second) {
+            flipFunction();
+        }
+    };
+
+    for (EngravingItem* e : el) {
+        if (e->isHairpinSegment()) {
+            e = toHairpinSegment(e)->hairpin();
+        }
+        if (e->isHairpin()) {
+            Hairpin* h = toHairpin(e);
+            flipOnce(h, [h] {
+                if (h->hairpinType() == HairpinType::CRESC_HAIRPIN) {
+                    h->undoChangeProperty(Pid::HAIRPIN_TYPE, int(HairpinType::DECRESC_HAIRPIN));
+                } else if (h->hairpinType() == HairpinType::DECRESC_HAIRPIN) {
+                    h->undoChangeProperty(Pid::HAIRPIN_TYPE, int(HairpinType::CRESC_HAIRPIN));
                 }
             });
         }
@@ -2935,6 +2971,7 @@ void Score::deleteItem(EngravingItem* el)
 
     case ElementType::STEM_SLASH:                   // cannot delete this elements
     case ElementType::HOOK:
+    case ElementType::GUITAR_BEND_TEXT:
         LOGD("cannot remove %s", el->typeName());
         break;
 
@@ -5098,7 +5135,7 @@ void Score::undoChangeParent(EngravingItem* element, EngravingItem* parent, staf
     if (element->parentItem() == parent && staffIdx == element->staffIdx()) {
         return;
     }
-    Staff* originStaff = element->staff();
+
     Staff* destStaff = staff(staffIdx);
     bool recreateItemNeeded = false;
 
@@ -5106,8 +5143,8 @@ void Score::undoChangeParent(EngravingItem* element, EngravingItem* parent, staf
     for (EngravingObject* obj : links) {
         EngravingItem* item = toEngravingItem(obj);
         Score* linkedScore = item->score();
-        Staff* linkedOrigin = originStaff->findLinkedInScore(linkedScore);
-        Staff* linkedDest = destStaff->findLinkedInScore(linkedScore);
+        Staff* linkedOrigin = item->staff();
+        Staff* linkedDest = linkedScore != this ? destStaff->findLinkedInScore(linkedScore) : linkedOrigin; // don't allow staff-change of linked elements within the same score
 
         if (!linkedScore) {
             continue;
@@ -7352,12 +7389,14 @@ void Score::undoRemoveStaleTieJumpPoints()
                 continue;
             }
 
-            // Remove invalid lyrics dashes
-            for (Lyrics* lyrics : toChordRest(e)->lyrics()) {
-                LyricsLine* separator = lyrics->separator();
-                if ((lyrics->syllabic() == LyricsSyllabic::BEGIN || lyrics->syllabic() == LyricsSyllabic::MIDDLE) && separator
-                    && !separator->nextLyrics() && !separator->isEndMelisma()) {
-                    lyrics->setNeedRemoveInvalidSegments();
+            if (!toChordRest(e)->hasFollowingJumpItem()) {
+                // Remove invalid lyrics dashes
+                for (Lyrics* lyrics : toChordRest(e)->lyrics()) {
+                    LyricsLine* separator = lyrics->separator();
+                    if ((lyrics->syllabic() == LyricsSyllabic::BEGIN || lyrics->syllabic() == LyricsSyllabic::MIDDLE) && separator
+                        && !separator->nextLyrics() && !separator->isEndMelisma()) {
+                        lyrics->setNeedRemoveInvalidSegments();
+                    }
                 }
             }
 

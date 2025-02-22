@@ -266,6 +266,7 @@ static const std::vector<Item<ElementType> > ELEMENT_TYPES = {
     { ElementType::TAB_DURATION_SYMBOL,  "TabDurationSymbol",    muse::TranslatableString("engraving", "Tab duration symbol") },
     { ElementType::FSYMBOL,              "FSymbol",              muse::TranslatableString("engraving", "Font symbol") },
     { ElementType::PAGE,                 "Page",                 muse::TranslatableString("engraving", "Page") },
+    { ElementType::PARENTHESIS,          "Parenthesis",          muse::TranslatableString("engraving", "Parenthesis") },
     { ElementType::HAIRPIN,              "HairPin",              muse::TranslatableString("engraving", "Hairpin") },
     { ElementType::OTTAVA,               "Ottava",               muse::TranslatableString("engraving", "Ottava") },
     { ElementType::PEDAL,                "Pedal",                muse::TranslatableString("engraving", "Pedal") },
@@ -317,8 +318,22 @@ static const std::vector<Item<ElementType> > ELEMENT_TYPES = {
     { ElementType::DUMMY,                "Dummy",                muse::TranslatableString::untranslatable("Dummy") },
 };
 
-const muse::TranslatableString& TConv::userName(ElementType v)
+static const std::unordered_map<ElementType, TranslatableString> ELEMENT_TYPE_PLURAL {
+    { ElementType::REHEARSAL_MARK, muse::TranslatableString("engraving", "Rehearsal marks") },
+    { ElementType::VOLTA, muse::TranslatableString("engraving", "Voltas") },
+    { ElementType::JUMP, muse::TranslatableString("engraving", "Jumps") },
+    { ElementType::MEASURE_NUMBER, muse::TranslatableString("engraving", "Measure numbers") },
+};
+
+const muse::TranslatableString& TConv::userName(ElementType v, bool plural)
 {
+    if (plural) {
+        auto it = ELEMENT_TYPE_PLURAL.find(v);
+        if (it != ELEMENT_TYPE_PLURAL.end()) {
+            return it->second;
+        }
+    }
+
     return findUserNameByType<ElementType>(ELEMENT_TYPES, v);
 }
 
@@ -2837,43 +2852,4 @@ const muse::TranslatableString& TConv::userName(Key v, bool isAtonal, bool isCus
 String TConv::translatedUserName(Key v, bool isAtonal, bool isCustom)
 {
     return userName(v, isAtonal, isCustom).translated();
-}
-
-const std::array<Item<ScoreStylePreset>, 6> SCORE_STYLE_PRESETS = { {
-    //: Score notation style: Default
-    { ScoreStylePreset::DEFAULT,  "Default",  muse::TranslatableString("engraving/scorestylepreset", "Default") },
-    //: Score notation style: Modified Stave Notation (MSN) with 16mm staff size. Intended for visually-impaired musicians.
-    { ScoreStylePreset::MSN_16MM, "16mm MSN", muse::TranslatableString("engraving/scorestylepreset", "16mm MSN") },
-    //: Score notation style: Modified Stave Notation (MSN) with 18mm staff size. Intended for visually-impaired musicians.
-    { ScoreStylePreset::MSN_18MM, "18mm MSN", muse::TranslatableString("engraving/scorestylepreset", "18mm MSN") },
-    //: Score notation style: Modified Stave Notation (MSN) with 20mm staff size. Intended for visually-impaired musicians.
-    { ScoreStylePreset::MSN_20MM, "20mm MSN", muse::TranslatableString("engraving/scorestylepreset", "20mm MSN") },
-    //: Score notation style: Modified Stave Notation (MSN) with 22mm staff size. Intended for visually-impaired musicians.
-    { ScoreStylePreset::MSN_22MM, "22mm MSN", muse::TranslatableString("engraving/scorestylepreset", "22mm MSN") },
-    //: Score notation style: Modified Stave Notation (MSN) with 25mm staff size. Intended for visually-impaired musicians.
-    { ScoreStylePreset::MSN_25MM, "25mm MSN", muse::TranslatableString("engraving/scorestylepreset", "25mm MSN") }
-} };
-
-AsciiStringView TConv::toXml(ScoreStylePreset preset)
-{
-    return findXmlTagByType<ScoreStylePreset>(SCORE_STYLE_PRESETS, preset);
-}
-
-ScoreStylePreset TConv::fromXml(const AsciiStringView& tag, ScoreStylePreset def)
-{
-    if (tag == "Default") {
-        return def;
-    }
-
-    return findTypeByXmlTag<ScoreStylePreset>(SCORE_STYLE_PRESETS, tag, def);
-}
-
-const muse::TranslatableString& TConv::userName(ScoreStylePreset v)
-{
-    return findUserNameByType<ScoreStylePreset>(SCORE_STYLE_PRESETS, v);
-}
-
-String TConv::translatedUserName(ScoreStylePreset v)
-{
-    return findUserNameByType<ScoreStylePreset>(SCORE_STYLE_PRESETS, v).translated();
 }

@@ -47,10 +47,14 @@ Item {
         panelWidth: root.width
     }
 
+    function resizePanelToContentHeight() {
+        var newHeight = (Math.min(padGrid.numRows, 2) * padGrid.cellHeight) + (soundTitleLabel.height * 2)
+        root.resizeRequested(root.width, newHeight)
+    }
+
     Component.onCompleted: {
         padGrid.model.init()
-        var newHeight = (padGrid.numRows * padGrid.cellHeight) + (soundTitleLabel.height * 2)
-        root.resizeRequested(root.width, newHeight)
+        root.resizePanelToContentHeight()
     }
 
     PercussionPanelModel {
@@ -343,8 +347,7 @@ Item {
                             }
 
                             function onNumPadsChanged() {
-                                var newHeight = (padGrid.numRows * padGrid.cellHeight) + (soundTitleLabel.height * 2)
-                                root.resizeRequested(root.width, newHeight)
+                                root.resizePanelToContentHeight()
                             }
                         }
                     }
@@ -418,7 +421,7 @@ Item {
                 drawFocusBorderInsideRect: true
 
                 onClicked: {
-                    padGrid.model.addEmptyRow()
+                    padGrid.model.addEmptyRow(/*focusFirstInNewRow*/ true)
                     flickable.goToBottom()
                 }
             }

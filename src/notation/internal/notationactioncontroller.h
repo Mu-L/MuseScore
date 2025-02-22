@@ -84,6 +84,7 @@ private:
     void toggleNoteInputMethod(NoteInputMethod method);
     void toggleNoteInputInsert();
     void handleNoteAction(NoteName note, NoteAddingMode addingMode);
+    void handleNoteAction(const muse::actions::ActionData& args);
     void padNote(const Pad& pad);
     void putNote(const muse::actions::ActionData& args);
     void removeNote(const muse::actions::ActionData& args);
@@ -205,7 +206,7 @@ private:
     void navigateToTextElementByFraction(const Fraction& fraction);
     void navigateToTextElementInNearMeasure(MoveDirection direction);
 
-    void startNoteInputIfNeed();
+    void startNoteInput();
 
     bool hasSelection() const;
     mu::engraving::EngravingItem* selectedElement() const;

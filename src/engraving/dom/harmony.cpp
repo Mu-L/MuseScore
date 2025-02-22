@@ -849,9 +849,14 @@ Fraction Harmony::ticksTillNext(int utick, bool stopAtMeasureEnd) const
 {
     Segment* seg = getParentSeg();
     Fraction duration = seg->ticks();
-    Segment* cur = seg->next();
-    auto rsIt = score()->repeatList().findRepeatSegmentFromUTick(utick);
 
+    const RepeatList& repeats = score()->repeatList();
+    auto rsIt = repeats.findRepeatSegmentFromUTick(utick);
+    if (rsIt == repeats.cend()) {
+        return duration;
+    }
+
+    Segment* cur = seg->next();
     Measure const* currentMeasure = seg->measure();
     Measure const* endMeasure = (stopAtMeasureEnd) ? currentMeasure : (*rsIt)->lastMeasure();
     Harmony const* nextHarmony = nullptr;
@@ -892,9 +897,9 @@ Fraction Harmony::ticksTillNext(int utick, bool stopAtMeasureEnd) const
             // End of repeatSegment or search boundary reached
             if (stopAtMeasureEnd) {
                 break;
-            } else {
+            } else if (!nextHarmony) {
                 // move to next RepeatSegment
-                if (++rsIt != score()->repeatList().end()) {
+                if (++rsIt != repeats.end()) {
                     currentMeasure = (*rsIt)->firstMeasure();
                     endMeasure     = (*rsIt)->lastMeasure();
                     cur = currentMeasure->first();
@@ -902,6 +907,12 @@ Fraction Harmony::ticksTillNext(int utick, bool stopAtMeasureEnd) const
             }
         }
     } while ((nextHarmony == nullptr) && (cur != nullptr));
+
+    if (nextHarmony && rsIt != repeats.end()) {
+        int tickOffset = (*rsIt)->utick - (*rsIt)->tick;
+        int nextHarmonyUtick = nextHarmony->tick().ticks() + tickOffset;
+        duration = Fraction::fromTicks(nextHarmonyUtick - utick);
+    }
 
     return duration;
 }
@@ -1337,7 +1348,8 @@ void Harmony::render()
     m_fontList.clear();
     for (const ChordFont& cf : chordList->fonts) {
         Font ff(font());
-        ff.setPointSizeF(ff.pointSizeF() * cf.mag);
+        double mag = m_userMag.value_or(cf.mag);
+        ff.setPointSizeF(ff.pointSizeF() * mag);
         if (!(cf.family.isEmpty() || cf.family == "default")) {
             ff.setFamily(cf.family, Font::Type::Harmony);
         }
@@ -1890,5 +1902,14 @@ Sid Harmony::getPropertyStyle(Pid pid) const
         }
     }
     return TextBase::getPropertyStyle(pid);
+}
+
+double Harmony::mag() const
+{
+    if (m_userMag.has_value()) {
+        return m_userMag.value();
+    }
+
+    return EngravingItem::mag();
 }
 }

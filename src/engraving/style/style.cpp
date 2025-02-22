@@ -25,6 +25,7 @@
 #include "types/constants.h"
 #include "compat/pageformat.h"
 #include "rw/compat/readchordlisthook.h"
+#include "rw/compat/compatutils.h"
 #include "rw/xmlreader.h"
 #include "rw/xmlwriter.h"
 #include "types/typesconv.h"
@@ -308,8 +309,6 @@ bool MStyle::read(IODevice* device, bool ign)
             readVersion(e.attribute("version"));
             while (e.readNextStartElement()) {
                 if (e.name() == "Style") {
-                    m_preset = TConv::fromXml(e.asciiAttribute("preset", "Default"), ScoreStylePreset::DEFAULT);
-                    m_presetEdited = e.attribute("edited", String(u"false")) == "true";
                     read(e, nullptr);
                 } else {
                     e.unknown();
@@ -531,6 +530,12 @@ void MStyle::read(XmlReader& e, compat::ReadChordListHook* readChordListHook)
                    || tag == "defaultFontSpatiumDependent"
                    || tag == "usePre_3_6_defaults") {
             e.skipCurrentElement(); // obsolete
+        } else if (tag == "articulationAnchorDefault" && m_version < 410) {
+            set(Sid::articulationAnchorDefault, (int)compat::CompatUtils::translateToNewArticulationAnchor(e.readInt()));
+        } else if (tag == "articulationAnchorLuteFingering" && m_version < 410) {
+            set(Sid::articulationAnchorLuteFingering, (int)compat::CompatUtils::translateToNewArticulationAnchor(e.readInt()));
+        } else if (tag == "articulationAnchorOther" && m_version < 410) {
+            set(Sid::articulationAnchorOther, (int)compat::CompatUtils::translateToNewArticulationAnchor(e.readInt()));
         } else if (tag == "lineEndToSystemEndDistance") { // renamed in 4.5
             set(Sid::lineEndToBarlineDistance, Spatium(e.readDouble()));
         } else if (!readProperties(e)) {
@@ -567,17 +572,7 @@ bool MStyle::write(IODevice* device)
 
 void MStyle::save(XmlWriter& xml, bool optimize)
 {
-    muse::XmlStreamWriter::Attributes attributes;
-
-    if (preset() != ScoreStylePreset::DEFAULT) {
-        attributes.push_back({ "preset", TConv::toXml(preset()) });
-    }
-
-    if (presetEdited()) {
-        attributes.push_back({ "edited", String(u"true") });
-    }
-
-    xml.startElement("Style", attributes);
+    xml.startElement("Style");
 
     for (const StyleDef::StyleValue& st : StyleDef::styleValues) {
         Sid idx = st.styleIdx();
