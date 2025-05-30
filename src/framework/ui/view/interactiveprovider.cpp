@@ -139,6 +139,8 @@ bool InteractiveProvider::isSelectColorOpened() const
 RetVal<Val> InteractiveProvider::openSync(const UriQuery& q_)
 {
     UriQuery q = q_;
+
+    //! NOTE Disable Dialog.exec()
     q.set("sync", false);
 
     RetVal<Val> rv;
@@ -165,6 +167,12 @@ RetVal<Val> InteractiveProvider::openSync(const UriQuery& q_)
     auto func = openFunc(q);
     func(resolve, reject);
 
+    ContainerMeta openMeta = uriRegister()->meta(q.uri());
+    if (openMeta.type == ContainerType::PrimaryPage) {
+        LOGW() << "Primary pages should not open in synchronous mode, please fix this.";
+        return rv;
+    }
+
     loop.exec();
 
     return rv;
@@ -172,12 +180,12 @@ RetVal<Val> InteractiveProvider::openSync(const UriQuery& q_)
 
 Promise<Val> InteractiveProvider::openAsync(const UriQuery& q)
 {
-    return make_promise<Val>(openFunc(q));
+    return make_promise<Val>(openFunc(q), PromiseType::AsyncByBody);
 }
 
 async::Promise<Val> InteractiveProvider::openAsync(const Uri& uri, const QVariantMap& params)
 {
-    return make_promise<Val>(openFunc(UriQuery(uri), params));
+    return make_promise<Val>(openFunc(UriQuery(uri), params), PromiseType::AsyncByBody);
 }
 
 Promise<Val>::Body InteractiveProvider::openFunc(const UriQuery& q)
